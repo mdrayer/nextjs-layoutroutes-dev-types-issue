@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LayoutRoutes dev issue
 
-## Getting Started
+To reproduce issue, do the following after installing packages
 
-First, run the development server:
+1. Run `npm run dev` to generate dev types and start dev server.
+1. Run `npm t` to run test. Note the resulting errors.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+$ npm t
+
+> my-app-16.2.6@0.1.0 test
+> npm run typegen && npm run lint && npm run tsc
+
+
+> my-app-16.2.6@0.1.0 typegen
+> next typegen
+
+Generating route types...
+✓ Types generated successfully
+
+> my-app-16.2.6@0.1.0 lint
+> eslint
+
+
+> my-app-16.2.6@0.1.0 tsc
+> tsc --noEmit
+
+.next/dev/types/validator.ts:24:44 - error TS2344: Type 'Route' does not satisfy the constraint 'LayoutRoutes'.
+  Type 'import("/path/to/my-app-16.2.6/.next/dev/types/routes").LayoutRoutes' is not assignable to type 'import("/path/to/my-app-16.2.6/.next/types/routes").LayoutRoutes'.
+    Type '"/%5Ffoo"' is not assignable to type 'LayoutRoutes'.
+
+24   default: React.ComponentType<LayoutProps<Route>> | ((props: LayoutProps<Route>) => React.ReactNode | Promise<React.ReactNode> | never | void | Promise<void>)
+                                              ~~~~~
+
+.next/dev/types/validator.ts:24:75 - error TS2344: Type 'Route' does not satisfy the constraint 'LayoutRoutes'.
+  Type 'import("/path/to/my-app-16.2.6/.next/dev/types/routes").LayoutRoutes' is not assignable to type 'import("/path/to/my-app-16.2.6/.next/types/routes").LayoutRoutes'.
+    Type '"/%5Ffoo"' is not assignable to type 'LayoutRoutes'.
+
+24   default: React.ComponentType<LayoutProps<Route>> | ((props: LayoutProps<Route>) => React.ReactNode | Promise<React.ReactNode> | never | void | Promise<void>)
+                                                                             ~~~~~
+
+.next/dev/types/validator.ts:67:31 - error TS2344: Type 'typeof import("/path/to/my-app-16.2.6/app/%5Ffoo/layout")' does not satisfy the constraint 'LayoutConfig<"/%5Ffoo">'.
+  Types of property 'default' are incompatible.
+    Type '({ children }: LayoutProps<"/_foo">) => Element' is not assignable to type 'ComponentType<LayoutProps<"/%5Ffoo">> | ((props: LayoutProps<"/%5Ffoo">) => void | ReactNode | Promise<ReactNode> | Promise<...>)'.
+      Type '({ children }: LayoutProps<"/_foo">) => Element' is not assignable to type 'FunctionComponent<LayoutProps<"/%5Ffoo">>'.
+        Types of parameters '__0' and 'props' are incompatible.
+          Type 'LayoutProps<"/%5Ffoo">' is not assignable to type 'LayoutProps<"/_foo">'.
+            Type 'LayoutProps<"/%5Ffoo">' is not assignable to type '{ params: Promise<{}>; children: ReactNode; }'.
+              Types of property 'params' are incompatible.
+                Type 'Promise<unknown>' is not assignable to type 'Promise<{}>'.
+                  Type 'unknown' is not assignable to type '{}'.
+
+67   type __Check = __IsExpected<typeof handler>
+                                 ~~~~~~~~~~~~~~
+
+
+Found 3 errors in the same file, starting at: .next/dev/types/validator.ts:24
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The issue is related to dev types in `.next/dev/types/routes.d.ts`. Clearing `.next` directory and then re-running `npm t` produces no errors. The expectation here is that there would _not_ be issues with the dev types, possibly having the `LayoutRoutes` match between dev and prod style types.
